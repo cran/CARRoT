@@ -25,7 +25,8 @@ This function is essentially a standard way to turn categorical non-numeric vari
 \examples{
 #creating a non-numeric set
 
-a<-t(rmultinom(100,1,c(0.2,0.3,0.5)))\%*\%c(1,2,3) 
+a<-t(rmultinom(100,1,c(0.2,0.3,0.5)))\%*\%c(1,2,3)
+
 a[a==1]='red'
 a[a==2]='green'
 a[a==3]='blue'

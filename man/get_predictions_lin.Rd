@@ -29,5 +29,5 @@ testset<-matrix(c(rnorm(10,2,4),runif(10,0,0.5),rbinom(10,1,0.5)),ncol=3)
 get_predictions_lin(trset,testset,runif(90,0,1),10)
 }
 \seealso{
-Function uses function \code{\link[stats]{lm}} and \code{\link[stats]{coef}}
+Function uses function \code{\link[stats]{lsfit}} and \code{\link[stats]{coef}}
 }

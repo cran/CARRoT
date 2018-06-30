@@ -5,7 +5,8 @@
 \title{Best regressions}
 \usage{
 regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode, cmode = "det",
-  predm = "exact", objfun = "acc", parallel = FALSE, cores)
+  predm = "exact", objfun = "acc", parallel = FALSE, cores, minx = NULL,
+  maxx = NULL, nr = NULL, maxw = NULL)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -29,9 +30,17 @@ regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode, cmode = "det",
 \item{parallel}{TRUE if using parallel toolbox, FALSE if not. Defaults to FALSE}
 
 \item{cores}{number of cores to use in case of parallel=TRUE}
+
+\item{minx}{minimum number of predictors to be included in a regression, defaults to 1}
+
+\item{maxx}{maximum number of predictors to be included in a regression, defaults to maximum feasible number according to one in ten rule}
+
+\item{nr}{a subset of the data-set, such that \code{1/part} of it lies in the test set and \code{1-1/part} is in the training set, defaults to empty set. This is to ensure that elements of this subset are included both in the training and in the test set.}
+
+\item{maxw}{maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule}
 }
 \value{
-Prints the highest predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression). 
+Prints the highest predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression).
 \item{ind}{Indices of the predictors included into regressions with the best predictive power written in a list. For \code{mode='linear'} a list of two lists. First list corresponds to the smallest absolute error, second corresponds to the smallest relative error. This output is identical to the one from \code{regr_ind}}
 \item{regr}{List of regression objects providing the best predictions. For \code{mode='multin'} and \code{mode='binary'}}
 \item{regr_a}{List of regression objects providing the best predictions with respect to absolute error.For \code{mode='linear'}}
@@ -52,7 +61,7 @@ outcomes_lin<-rnorm(56,2,1)
 
 #running the function
 
-regr_whole(variables_lin,outcomes_lin,100,mode='linear',parallel=TRUE,cores=2)
+regr_whole(variables_lin,outcomes_lin,20,mode='linear',parallel=TRUE,cores=2)
 
 #creating variables for binary mode
 
@@ -64,7 +73,7 @@ out<-rbinom(100,1,0.3)
 
 #running the function
 
-regr_whole(vari,out,100,cutoff=0.5,part=10,mode='binary',parallel=TRUE,cores=2)
+regr_whole(vari,out,20,cutoff=0.5,part=10,mode='binary',parallel=TRUE,cores=2)
 }
 \seealso{
 Uses \code{\link{regr_ind}},\code{\link[stats]{lm}}, \code{\link[nnet]{multinom}}

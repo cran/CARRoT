@@ -4,16 +4,18 @@
 \alias{compute_max_length}
 \title{Maximum number of the regressions}
 \usage{
-compute_max_length(vari_col,k,c,we)
+compute_max_length(vari_col,k,c,we,maxx)
 }
 \arguments{
 \item{vari_col}{number of predictors}
 
-\item{k}{number of elements in the subset of the predictors}
+\item{k}{maximum weight of the predictors}
 
 \item{c}{array of all indices of the predictors}
 
 \item{we}{array of weights of the predictors. Continuous or categorical numerical variable with more then 5 categories has weight 1, otherwise it has weight \code{n-1} where \code{n} is the number of categories}
+
+\item{maxx}{maximum number of predictors, total number of variables by default}
 }
 \value{
 Integer correponding to maximum number of regressions of the same size

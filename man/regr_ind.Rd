@@ -5,7 +5,8 @@
 \title{Indices of the best regressions}
 \usage{
 regr_ind(vari, outi, crv, cutoff = NULL, part = 10, mode, cmode = "det",
-  predm = "exact", objfun = "acc", parallel = FALSE, cores)
+  predm = "exact", objfun = "acc", parallel = FALSE, cores, minx = NULL,
+  maxx = NULL, nr = NULL, maxw = NULL)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -29,9 +30,17 @@ regr_ind(vari, outi, crv, cutoff = NULL, part = 10, mode, cmode = "det",
 \item{parallel}{TRUE if using parallel toolbox, FALSE if not. Defaults to FALSE}
 
 \item{cores}{number of cores to use in case of parallel=TRUE}
+
+\item{minx}{minimum number of predictors to be included in a regression, defaults to 1}
+
+\item{maxx}{maximum number of predictors to be included in a regression, defaults to maximum feasible number according to one in ten rule}
+
+\item{nr}{a subset of the data-set, such that \code{1/part} of it lies in the test set and \code{1-1/part} is in the training set, defaults to empty set. This is to ensure that elements of this subset are included both in the training and in the test set.}
+
+\item{maxw}{maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule}
 }
 \value{
-Prints the best predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression). Returns indices of the predictors included into regressions with the highest predictive power written in a list. For \code{mode='linear'} outputs a list of two lists. First list corresponds to the smallest absolute error, second corresponds to the smallest relative error
+Prints the best predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic and linear regression). Returns indices of the predictors included into regressions with the highest predictive power written in a list. For \code{mode='linear'} outputs a list of two lists. First list corresponds to the smallest absolute error, second corresponds to the smallest relative error
 }
 \description{
 One of the two main functions of the package. Identifies the predictors included into regressions with the highest average predictive power
@@ -59,7 +68,7 @@ out<-rbinom(100,1,0.3)
 
 #running the function
 
-regr_ind(vari,out,100,cutoff=0.5,part=10,mode='binary',parallel=TRUE,cores=2)
+regr_ind(vari,out,20,cutoff=0.5,part=10,mode='binary',parallel=TRUE,cores=2,nr=c(1,10,20),maxx=1)
 }
 \seealso{
 Uses \code{\link{compute_weights}}, \code{\link{make_numeric}}, \code{\link{compute_max_weight}}, \code{\link{compute_weights}}, \code{\link{compute_max_length}}, \code{\link{cross_val}},\code{\link{av_out}}, \code{\link{get_indices}}

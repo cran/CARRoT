@@ -21,7 +21,7 @@ make_numeric_sets(a,ai,k,vari,ra,l)
 }
 \value{
 Returns a list containing two objects: \code{tr} and \code{test}\cr
-\item{tr}{training set transformed into a numeric one} 
+\item{tr}{training set transformed into a numeric one}
 \item{test}{test set transformed into a numeric one}
 }
 \description{
@@ -35,7 +35,7 @@ Function transforms the whole set of predictors into a numeric set by consecutiv
 
 a<-t(rmultinom(100,1,c(0.2,0.3,0.5)))\%*\%c(1,2,3)
 
-#creating an analogous non-numeric variable 
+#creating an analogous non-numeric variable
 
 c<-array(NA,100)
 c[a==1]='red'

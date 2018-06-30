@@ -4,7 +4,8 @@
 \alias{cross_val}
 \title{Cross-validation run}
 \usage{
-cross_val(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objfun)
+cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode, predm,
+  cutoff, objfun, minx = NULL, maxx = NULL, nr = NULL, maxw = NULL)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -34,9 +35,17 @@ cross_val(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objf
 \item{cutoff}{cut-off value for logistic regression}
 
 \item{objfun}{\code{'roc'} for maximising the predictive power with respect to AUC, \code{'acc'} for maximising predictive power with respect to accuracy.}
+
+\item{minx}{minimum number of predictors to be included in a regression, defaults to 1}
+
+\item{maxx}{maximum number of predictors to be included in a regression, defaults to maximum feasible number according to one in ten rule}
+
+\item{nr}{a subset of the data-set, such that \code{1/part} of it lies in the test set and \code{1-1/part} is in the training set, defaults to empty set}
+
+\item{maxw}{maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule}
 }
 \value{
-\item{regr}{An M x N matrix of sums of the absolute errors for each element of the test set for each feasible regression. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression. Therefore each row corresponds to results obtained from running regressions with the same number of variables and columns correspond to different subsets of predictors used.} 
+\item{regr}{An M x N matrix of sums of the absolute errors for each element of the test set for each feasible regression. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression. Therefore each row corresponds to results obtained from running regressions with the same number of variables and columns correspond to different subsets of predictors used.}
 \item{regrr}{An M x N matrix of sums of the relative errors for each element of the test set (only for \code{mode = 'linear'}) for each feasible regression. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression. Therefore each row corresponds to results obtained from running regressions with the same number of variables and columns correspond to different subsets of predictors used.}
 \item{nvar}{Maximum feasible number of variables in the regression}
 \item{emp}{An accuracy of always predicting the more likely outcome as suggested by the training set (only for \code{mode = 'binary'} and \code{objfun = 'acc'})}
@@ -54,9 +63,13 @@ vari<-matrix(c(1:100,seq(1,300,3)),ncol=2)
 
 out<-rbinom(100,1,0.3)
 
+#creating array for predictions
+
+preds<-array(NA,c(2,2))
+
 #running the function
 
-cross_val(vari,out,1:2,10,10,100,c(1,1),2,array(NA,c(2,2)),'binary','det','exact',0.5,'acc')
+cross_val(vari,out,1:2,10,10,100,c(1,1),2,preds,'binary','det','exact',0.5,'acc',nr=c(1,4))
 }
 \seealso{
 Uses \code{\link{compute_max_weight}}, \code{\link{sum_weights_sub}}, \code{\link{make_numeric_sets}}, \code{\link{get_predictions_lin}}, \code{\link{get_predictions}}, \code{\link{get_probabilities}}, \code{\link{AUC}}, \code{\link[utils]{combn}}
