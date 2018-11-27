@@ -4,7 +4,7 @@
 \alias{get_indices}
 \title{Best regression}
 \usage{
-get_indices(predsp,nvar,c,we)
+get_indices(predsp,nvar,c,we,st)
 }
 \arguments{
 \item{predsp}{An M x N matrix of averaged out predictive power values. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression.}
@@ -14,6 +14,8 @@ get_indices(predsp,nvar,c,we)
 \item{c}{array of all indices of the prediction variables}
 
 \item{we}{array of all weights of the prediction variables}
+
+\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
 }
 \value{
 A list of arrays which contain indices of the predictors corresponfing to the best regressions

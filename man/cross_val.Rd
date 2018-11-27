@@ -4,8 +4,9 @@
 \alias{cross_val}
 \title{Cross-validation run}
 \usage{
-cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode, predm,
-  cutoff, objfun, minx = NULL, maxx = NULL, nr = NULL, maxw = NULL)
+cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode,
+  predm, cutoff, objfun, minx = NULL, maxx = NULL, nr = NULL,
+  maxw = NULL, st = NULL)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -14,7 +15,7 @@ cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode, predm,
 
 \item{c}{set of all indices of the predictors}
 
-\item{rule}{rule of 10 in this case}
+\item{rule}{an Events per Variable (EPV) rule, defaults to 10}
 
 \item{part}{indicates partition of the original data-set into training and test set in a proportion \code{(part-1):1}}
 
@@ -43,6 +44,8 @@ cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode, predm,
 \item{nr}{a subset of the data-set, such that \code{1/part} of it lies in the test set and \code{1-1/part} is in the training set, defaults to empty set}
 
 \item{maxw}{maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule}
+
+\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
 }
 \value{
 \item{regr}{An M x N matrix of sums of the absolute errors for each element of the test set for each feasible regression. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression. Therefore each row corresponds to results obtained from running regressions with the same number of variables and columns correspond to different subsets of predictors used.}

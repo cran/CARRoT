@@ -4,7 +4,7 @@
 \alias{sum_weights_sub}
 \title{Cumulative weights of the predictors' subsets}
 \usage{
-sum_weights_sub(a,m,we)
+sum_weights_sub(a,m,we,st)
 }
 \arguments{
 \item{a}{an \code{m} x N matrix, containing all possible subsets (N overall) of the size \code{m} of predictors' indices; therefore each column of \code{a} defines a unique subset of the predictors}
@@ -12,6 +12,8 @@ sum_weights_sub(a,m,we)
 \item{m}{number of elements in each subset of indices}
 
 \item{we}{array of weights of the predictors}
+
+\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
 }
 \value{
 Returns an array of weights for predictors defined by each colun of the matrix \code{a}

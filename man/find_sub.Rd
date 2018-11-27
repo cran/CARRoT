@@ -4,7 +4,7 @@
 \alias{find_sub}
 \title{Finds certain subsets of predictors}
 \usage{
-find_sub(a,s,j,c)
+find_sub(a,s,j,c,st)
 }
 \arguments{
 \item{a}{A \code{j} x N matrix, containing all possible subsets (N overall) of the size \code{j} of predictors' indices.}
@@ -14,6 +14,8 @@ find_sub(a,s,j,c)
 \item{j}{number of rows in \code{a}}
 
 \item{c}{array of all indices of the predictors}
+
+\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
 }
 \value{
 Returns a submatrix of matrix \code{a} which consits of columns determined by the input array \code{s}

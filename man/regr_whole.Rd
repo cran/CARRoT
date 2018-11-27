@@ -4,9 +4,10 @@
 \alias{regr_whole}
 \title{Best regressions}
 \usage{
-regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode, cmode = "det",
-  predm = "exact", objfun = "acc", parallel = FALSE, cores, minx = NULL,
-  maxx = NULL, nr = NULL, maxw = NULL)
+regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode,
+  cmode = "det", predm = "exact", objfun = "acc", parallel = FALSE,
+  cores, minx = NULL, maxx = NULL, nr = NULL, maxw = NULL,
+  st = NULL, rule = 10)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -38,6 +39,10 @@ regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode, cmode = "det",
 \item{nr}{a subset of the data-set, such that \code{1/part} of it lies in the test set and \code{1-1/part} is in the training set, defaults to empty set. This is to ensure that elements of this subset are included both in the training and in the test set.}
 
 \item{maxw}{maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule}
+
+\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
+
+\item{rule}{an Events per Variable (EPV) rule, defaults to 10}
 }
 \value{
 Prints the highest predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression).
