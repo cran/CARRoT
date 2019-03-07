@@ -5,9 +5,9 @@
 \title{Best regressions}
 \usage{
 regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode,
-  cmode = "det", predm = "exact", objfun = "acc", parallel = FALSE,
-  cores, minx = NULL, maxx = NULL, nr = NULL, maxw = NULL,
-  st = NULL, rule = 10)
+  predm = "exact", objfun = "acc", parallel = FALSE, cores,
+  minx = 1, maxx = NULL, nr = NULL, maxw = NULL, st = NULL,
+  rule = 10, corr = 1)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -21,8 +21,6 @@ regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode,
 \item{part}{for each cross-validation partitions the dataset into training and test set in a proportion \code{(part-1):part}}
 
 \item{mode}{\code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)}
-
-\item{cmode}{\code{'det'} or \code{''}; \code{'det'} always predicts the more likely outcome as determined by the odds ratio; \code{''} predicts certain outcome with probability corresponding to its odds ratio (more conservative). Option available for multinomial/logistic regression}
 
 \item{predm}{\code{'exact'} or \code{''}; for logistic and multinomial regression; \code{'exact'} computes how many times the exact outcome category was predicted, \code{''} computes how many times either the exact outcome category or its nearest neighbour was predicted}
 
@@ -43,6 +41,8 @@ regr_whole(vari, outi, crv, cutoff = NULL, part = 10, mode,
 \item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
 
 \item{rule}{an Events per Variable (EPV) rule, defaults to 10}
+
+\item{corr}{maximum correlation allowed between the variables in a single model, defaults to 1}
 }
 \value{
 Prints the highest predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression).

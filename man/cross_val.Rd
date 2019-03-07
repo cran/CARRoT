@@ -4,9 +4,9 @@
 \alias{cross_val}
 \title{Cross-validation run}
 \usage{
-cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode,
-  predm, cutoff, objfun, minx = NULL, maxx = NULL, nr = NULL,
-  maxw = NULL, st = NULL)
+cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, predm,
+  cutoff, objfun, minx = 1, maxx = NULL, nr = NULL, maxw = NULL,
+  st = NULL, corr = 1)
 }
 \arguments{
 \item{vari}{set of predictors}
@@ -29,8 +29,6 @@ cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode,
 
 \item{mode}{\code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)}
 
-\item{cmode}{\code{'det'} or \code{''}; \code{'det'} always predicts the more likely outcome as determined by the odds ratio; \code{''} predicts certain outcome with probability corresponding to its odds ratio (more conservative). Option available for multinomial/logistic regression}
-
 \item{predm}{\code{'exact'} or \code{''}; for logistic and multinomial regression; \code{'exact'} computes how many times the exact outcome category was predicted, \code{''} computes how many times either the exact outcome category or its nearest neighbour was predicted}
 
 \item{cutoff}{cut-off value for logistic regression}
@@ -46,6 +44,8 @@ cross_val(vari, outi, c, rule, part, l, we, vari_col, preds, mode, cmode,
 \item{maxw}{maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule}
 
 \item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
+
+\item{corr}{maximum correlation allowed between the variables in a single model, defaults to 1}
 }
 \value{
 \item{regr}{An M x N matrix of sums of the absolute errors for each element of the test set for each feasible regression. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression. Therefore each row corresponds to results obtained from running regressions with the same number of variables and columns correspond to different subsets of predictors used.}
@@ -72,7 +72,7 @@ preds<-array(NA,c(2,2))
 
 #running the function
 
-cross_val(vari,out,1:2,10,10,100,c(1,1),2,preds,'binary','det','exact',0.5,'acc',nr=c(1,4))
+cross_val(vari,out,1:2,10,10,100,c(1,1),2,preds,'binary','exact',0.5,'acc',nr=c(1,4))
 }
 \seealso{
 Uses \code{\link{compute_max_weight}}, \code{\link{sum_weights_sub}}, \code{\link{make_numeric_sets}}, \code{\link{get_predictions_lin}}, \code{\link{get_predictions}}, \code{\link{get_probabilities}}, \code{\link{AUC}}, \code{\link[utils]{combn}}
