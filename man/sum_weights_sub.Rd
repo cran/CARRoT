@@ -13,7 +13,7 @@ sum_weights_sub(a,m,we,st)
 
 \item{we}{array of weights of the predictors}
 
-\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
+\item{st}{a subset of predictors to be always included into a predictive model}
 }
 \value{
 Returns an array of weights for predictors defined by each colun of the matrix \code{a}

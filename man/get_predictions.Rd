@@ -4,7 +4,7 @@
 \alias{get_predictions}
 \title{Predictions for multinomial regression}
 \usage{
-get_predictions(p,k,cutoff,mode)
+get_predictions(p,k,cutoff,cmode,mode)
 }
 \arguments{
 \item{p}{probabilities of the outcomes for the test set given either by an array (logistic regression) or by a matrix (multinomial regression)}
@@ -12,6 +12,8 @@ get_predictions(p,k,cutoff,mode)
 \item{k}{size of the test set}
 
 \item{cutoff}{cut-off value of the probability}
+
+\item{cmode}{\code{'det'} or \code{''}; \code{'det'} always predicts the more likely outcome as determined by the odds ratio; \code{''} predicts certain outcome with probability corresponding to its odds ratio (more conservative). Option available for multinomial/logistic regression}
 
 \item{mode}{\code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)}
 }
@@ -24,7 +26,7 @@ Function which makes a prediction for multinomial/logistic regression based on t
 \examples{
 #binary mode
 
-get_predictions(runif(20,0.4,0.6),20,0.5,'binary')
+get_predictions(runif(20,0.4,0.6),20,0.5,'det','binary')
 
 #creating a data-set for multinomial mode
 
@@ -34,7 +36,7 @@ p3<-1-p1-p2
 
 #running the function
 
-get_predictions(matrix(c(p1,p2,p3),ncol=3),20,0.5,'multin')
+get_predictions(matrix(c(p1,p2,p3),ncol=3),20,0.5,'det','multin')
 }
 \seealso{
 Uses \code{\link[stats]{rbinom}}, \code{\link[stats]{rmultinom}}

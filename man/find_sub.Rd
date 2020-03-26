@@ -15,7 +15,7 @@ find_sub(a,s,j,c,st)
 
 \item{c}{array of all indices of the predictors}
 
-\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
+\item{st}{a subset of predictors to be always included into a predictive model}
 }
 \value{
 Returns a submatrix of matrix \code{a} which consits of columns determined by the input array \code{s}

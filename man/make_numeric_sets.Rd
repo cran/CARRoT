@@ -4,7 +4,7 @@
 \alias{make_numeric_sets}
 \title{Transforming the set of predictors into a numeric set}
 \usage{
-make_numeric_sets(a,ai,k,vari,ra,l)
+make_numeric_sets(a,ai,k,vari,ra,l,mode)
 }
 \arguments{
 \item{a}{An M x N matrix, containing all possible subsets (N overall) of the size M of predictors' indices; therefore each column of \code{a} defines a unique subset of the predictors}
@@ -18,6 +18,8 @@ make_numeric_sets(a,ai,k,vari,ra,l)
 \item{ra}{array of sample indices of \code{vari}}
 
 \item{l}{size of the sample}
+
+\item{mode}{\code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)}
 }
 \value{
 Returns a list containing two objects: \code{tr} and \code{test}\cr
@@ -52,7 +54,7 @@ b[,1]=data.frame(c)
 
 #running the function
 
-make_numeric_sets(combn(3,2),1:3,1,b,sample(1:100,60),100)
+make_numeric_sets(combn(3,2),1:3,1,b,sample(1:100,60),100,"binary")
 }
 \seealso{
 \code{\link{make_numeric}}

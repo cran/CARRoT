@@ -4,7 +4,7 @@
 \alias{quadr}
 \title{Pairwise interactions and squares}
 \usage{
-quadr(A,n)
+quadr(A, n = 1000)
 }
 \arguments{
 \item{A}{set of predictors}
@@ -16,7 +16,4 @@ Returns the predictors including their squares and pairwise interactions
 }
 \description{
 Function transforms a set of predictors into a set of predictors, their squares and pairwise interactions
-}
-\examples{
-quadr(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
 }

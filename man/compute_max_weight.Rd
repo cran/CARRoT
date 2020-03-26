@@ -15,7 +15,7 @@ compute_max_weight(outi,mode)
 returns an integer value of maximum allowed weight multiplied by 10
 }
 \description{
-Function which computes maximal weight (multiplied by 10) of a regression according to the rule of thumb applied to the outcome variable. Weight of a regression equals the sum of weights of its predictors.
+Function which computes maximal weight (multiplied by the corresponding EPV rule) of a regression according to the rule of thumb applied to the outcome variable. Weight of a regression equals the sum of weights of its predictors.
 }
 \details{
 For continuous outcomes it equals sample size divided by 10, for multinomial it equals the size of the smallest category divided by 10

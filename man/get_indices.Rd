@@ -15,9 +15,9 @@ get_indices(predsp,nvar,c,we,st,minx)
 
 \item{we}{array of all weights of the prediction variables}
 
-\item{st}{a subset of predictors to be always included into a predictive model,defaults to empty set}
+\item{st}{a subset of predictors to be always included into a predictive model}
 
-\item{minx}{minimum number of predictors to be included in a single regression, defaults to 1}
+\item{minx}{minimum number of predictors, defaults to 1}
 }
 \value{
 A list of arrays which contain indices of the predictors corresponfing to the best regressions

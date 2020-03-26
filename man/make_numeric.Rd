@@ -4,7 +4,7 @@
 \alias{make_numeric}
 \title{Turning a non-numeric variable into a numeric one}
 \usage{
-make_numeric(vari, outcome, ra)
+make_numeric(vari, outcome, ra,mode)
 }
 \arguments{
 \item{vari}{array of values to be transformed}
@@ -12,6 +12,8 @@ make_numeric(vari, outcome, ra)
 \item{outcome}{TRUE/FALSE indicates whether the variable \code{vari} is an outcome (TRUE) or a predictor (FALSE)}
 
 \item{ra}{indices of the input array \code{vari} which indicate which values will be transformed}
+
+\item{mode}{\code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)}
 }
 \value{
 Returned value is an M x N matrix where M is the length of the input array of indices \code{ra} and N is \code{length(vari)-1}.
@@ -33,7 +35,7 @@ a[a==3]='blue'
 
 #running the function
 
-make_numeric(a,FALSE,sample(1:100,50))
+make_numeric(a,FALSE,sample(1:100,50),"linear")
 
 make_numeric(a,TRUE,sample(1:100,50))
 }
