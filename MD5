@@ -1,7 +1,7 @@
-8b9a2ac1c8f5081db4b14853acb6215c *DESCRIPTION
-f4cab1e416b91ecd29768888ccc43724 *NAMESPACE
-951a497555e5bd7436aa396cec1a8f0a *R/carrot_functions.R
-b10e8a3b151b1f80173a9d852aa09dbf *build/partial.rdb
+104c0e3b60d8bd9bbd7105fa58eba741 *DESCRIPTION
+1e53490a1425bdc874b159648d7fe28d *NAMESPACE
+a30158eddf9b18a14110ea57a6198c69 *R/carrot_functions.R
+59dda0860560a4669dd892c85c47c00e *build/partial.rdb
 029af41bc69b92f4873fdd1c9c2fcde2 *inst/REFERENCES.bib
 683433f03f7df74eb45920b020f000b6 *man/AUC.Rd
 fdb4936d4f24ca7a2180648e87d06bf2 *man/av_out.Rd
@@ -10,8 +10,8 @@ c791d7673ab905a9b32e76d3e1c21b6d *man/comb.Rd
 c2855d0039696328e2bb1dfb52a2e353 *man/compute_max_weight.Rd
 97d7d354be966d3d9bd03ecb6d2f99de *man/compute_weights.Rd
 4396f674e1eed56e47aa8b5fe81b9ed4 *man/cross_val.Rd
-00a6ed66ef97ee0eb4cfa2fe27f3da90 *man/cub.Rd
-a51949bc3de41375c6328790daeb340f *man/find_int.Rd
+5593c3dbd7df0896917178f7d0ac3d94 *man/cub.Rd
+4a803134f0fd086167d3b389f530c373 *man/find_int.Rd
 339db2bd2648e99cce38d47c094d7280 *man/find_sub.Rd
 90c9aaba42b16dfacaa7124a7a7c3a97 *man/get_indices.Rd
 a512328b9cf98340de75c71235750a89 *man/get_predictions.Rd
@@ -19,7 +19,7 @@ fd1cf13ef4072e65ee2e9e6a12b98100 *man/get_predictions_lin.Rd
 bf5f36181efb405d26babc101bfae690 *man/get_probabilities.Rd
 7e5c80ee9ebb73c31eb771ad499681c6 *man/make_numeric.Rd
 e443e31ba51531ef6f51683fb0b5a64e *man/make_numeric_sets.Rd
-57e5949d4445f018917060753e650e19 *man/quadr.Rd
+8da4ed1854d75933b11b9ed347a39997 *man/quadr.Rd
 c66a007f19f53e2e81b19d52eb40a2cc *man/regr_ind.Rd
 46fd6ca98b58e4f382a7c9e1947af92e *man/regr_whole.Rd
 9884122412b63b8a6c3e164605d6e447 *man/sum_weights_sub.Rd

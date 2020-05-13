@@ -17,3 +17,6 @@ Returns two or three indices corredsponding to a combination of variables writte
 \description{
 Function transforms an index of an array of two- or three-way interactions into two or three indices corresponding to the interacting variables
 }
+\examples{
+find_int(28,9)
+}

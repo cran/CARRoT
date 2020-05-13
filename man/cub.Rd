@@ -17,3 +17,8 @@ Returns the predictors including their squares, pairwise interactions, cubes and
 \description{
 Function transforms a set of predictors into a set of predictors, their squares, pairwise interactions, cubes and three-way interactions
 }
+\examples{
+cub(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
+
+
+}

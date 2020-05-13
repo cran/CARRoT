@@ -1,3 +1,5 @@
+
+
 #'Turning a non-numeric variable into a numeric one
 #'
 #'Function which turns a single categorical (non-numeric) variable into a numeric one (or several) by introducing dummy '0'/'1' variables.
@@ -903,7 +905,7 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
         #transform the corresponding subset of variables into numeric one
 
-        set_num<-make_numeric_sets(a,ai,k,vari,ra,l)
+        set_num<-make_numeric_sets(a,ai,k,vari,ra,l,mode)
 
         #numeric test set
 
@@ -1684,7 +1686,8 @@ regr_whole<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='e
 #'@param A set of predictors
 #'@param n first \code{n} predictors, whose interactions with the rest should be taken into account, defaults to all of the predictors
 #'@return Returns the predictors including their squares and pairwise interactions
-#'@example quadr(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
+#'@export quadr
+#'@examples quadr(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
 
 
 
@@ -1715,9 +1718,10 @@ B
 #'@param A set of predictors
 #'@param n first \code{n} predictors, whose interactions with the rest should be taken into account, defaults to all of the predictors
 #'@return Returns the predictors including their squares, pairwise interactions, cubes and three-way interactions
-#'@example cub(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
-
-
+#'@export cub
+#'@examples cub(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
+#' 
+#' 
 cub<-function(A,n=1000){
 
   B<-quadr(A,n) #creating an array of all pairwise interactions
@@ -1744,7 +1748,8 @@ cub<-function(A,n=1000){
 #'@param N number of interacting variables
 #'@usage find_int(ind,N)
 #'@return Returns two or three indices corredsponding to a combination of variables written under the given index
-#'@example find_int(28,9)
+#'@export find_int
+#'@examples find_int(28,9)
 
 
 find_int<-function(ind,N){
