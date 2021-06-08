@@ -1282,7 +1282,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   #in case of an error close all the connections
 
-  on.exit(closeAllConnections());
+  #on.exit(closeAllConnections());
 
 
   #error message in case of incompatible moe and objfun parameters
@@ -1340,6 +1340,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
   `%fun%` <- `%do%`
 
 
+
   if (parallel==TRUE){ #in case the parallel mode is on
 
     `%fun%` <- `%dopar%`
@@ -1374,6 +1375,8 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   }
 
+  if(parallel==T) on.exit(stopCluster(cl))
+
   #running the given number of cross-validations
 
   result <- foreach(i=1:crv, .combine='comb', .multicombine=TRUE,.packages="CARRoT") %fun% {
@@ -1385,6 +1388,8 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
 
   }
+
+#parallel::stopCluster(cl)
 
   #writing predictive powers of the regressions in an array
 
@@ -1434,9 +1439,9 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   #stop the cluster
 
-  if (parallel==TRUE) stopCluster(cl)
 
-  closeAllConnections()
+
+ # closeAllConnections()
 
 
   #average out the predictive powers over all cross-validations
@@ -1463,7 +1468,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
     #print the average accuracy attained by the best predictive model and the empirical accuracy
 
     print(c(max(predsp[predsp>0],na.rm=TRUE),1-sum(cpred)/crv));
- #   a1<-max(predsp[predsp>0],na.rm=TRUE)
+    a1<-max(predsp[predsp>0],na.rm=TRUE)
 
   } else{
 
@@ -1472,7 +1477,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
       #print the average AUROC of the best predictive model
 
       print(max(predsp[predsp>0],na.rm=TRUE))
- #     a1<-max(predsp[predsp>0],na.rm=TRUE)
+      a1<-max(predsp[predsp>0],na.rm=TRUE)
 
     } else{
 
@@ -1482,12 +1487,15 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
         #in case all average relative errors are finite
 
       print(c(min(predsp[predsp>0],na.rm=TRUE),min(predspr[predspr>0],na.rm=TRUE),sum(cpred)/crv,sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf]))))
+      a1<-c(min(predsp[predsp>0],na.rm=TRUE),min(predspr[predspr>0],na.rm=TRUE),sum(cpred)/crv,sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf])))
 
         } else {
 
           #printing NaN values for average relative error in case it is not finite
 
         print(c(min(predsp[predsp>0],na.rm=TRUE),NaN,sum(cpred)/crv,NaN))
+
+          a1<-c(min(predsp[predsp>0],na.rm=TRUE),NaN,sum(cpred)/crv,NaN)
 
 
       }
@@ -1505,13 +1513,13 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
      #find indices of the variables included in the models corresponding to the lowest absolute and lowest relative error
 
-     list(get_indices(-predsp,nvar,c,we,st,minx),get_indices(-predspr,nvar,c,we,st,minx))
+     list(a1,get_indices(-predsp,nvar,c,we,st,minx),get_indices(-predspr,nvar,c,we,st,minx))
 
    } else {
 
      #in case relative error is infinite output NaN
 
-     list(get_indices(-predsp,nvar,c,we,st,minx),NaN)
+     list(a1,get_indices(-predsp,nvar,c,we,st,minx),NaN)
 
    }
 
@@ -1519,7 +1527,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
     #find indices of the variables included in the models corresponding to the highest accuracy/AUROC
 
-    list(get_indices(predsp,nvar,c,we,st,minx))
+    list(a1,get_indices(predsp,nvar,c,we,st,minx))
 
   }
 
@@ -1607,14 +1615,14 @@ regr_whole<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='e
 
     regr_a=list(0)
 
-    if (identical(ind[[1]][[1]],ind[[2]][[1]])){ #if the same models minimise both relative and absolute error
+    if (identical(ind[[2]][[1]],ind[[3]][[1]])){ #if the same models minimise both relative and absolute error
 
 
 
-      for (i in 1:length(ind[[1]])){ #fit linear regression with the variables corresponding to the best models to the whole dataset
+      for (i in 1:length(ind[[2]])){ #fit linear regression with the variables corresponding to the best models to the whole dataset
 
 
-        regr_a[[i]]<-lsfit(outi,vari[,ind[[1]][[i]]]);
+        regr_a[[i]]<-lsfit(outi,vari[,ind[[2]][[i]]]);
 
 
       }
@@ -1629,23 +1637,23 @@ regr_whole<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='e
 
 
 
-      regr_a<-array(list(),length(ind[[1]]))
+      regr_a<-array(list(),length(ind[[2]]))
 
 
-      for (i in 1:length(ind[[1]])){ #fitting to the whole dataset regression which minimises absolute error
+      for (i in 1:length(ind[[2]])){ #fitting to the whole dataset regression which minimises absolute error
 
-        regr_a[[i]]<-lsfit(outi,vari[,ind[[1]][[i]]]);
+        regr_a[[i]]<-lsfit(outi,vari[,ind[[2]][[i]]]);
 
       }
 
 
-      regr_r<-array(list(),length(ind[[2]]))
+      regr_r<-array(list(),length(ind[[3]]))
 
 
-      for (i in 1:length(ind[[2]])){ #fitting to the whole dataset regression which minimises relative error
+      for (i in 1:length(ind[[3]])){ #fitting to the whole dataset regression which minimises relative error
 
 
-        regr_r[[i]]<-lsfit(outi,vari[,unlist(ind[[2]][[i]])]);
+        regr_r[[i]]<-lsfit(outi,vari[,unlist(ind[[3]][[i]])]);
 
       }
 
@@ -1660,11 +1668,11 @@ regr_whole<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='e
   } else { #multinomial or binary mode
 
 
-    regr<-array(list(),length(ind[[1]]))
+    regr<-array(list(),length(ind[[2]]))
 
-    for (i in 1:length(ind[[1]])){ #fitting to the whole dataset regression which mmaximises the predictive power
+    for (i in 1:length(ind[[2]])){ #fitting to the whole dataset regression which mmaximises the predictive power
 
-      regr[[i]]<-multinom(-outi~.,data=data.frame(vari[,ind[[1]][[i]]]),trace=FALSE)
+      regr[[i]]<-multinom(-outi~.,data=data.frame(vari[,ind[[2]][[i]]]),trace=FALSE)
 
     }
 
@@ -1720,8 +1728,8 @@ B
 #'@return Returns the predictors including their squares, pairwise interactions, cubes and three-way interactions
 #'@export cub
 #'@examples cub(cbind(1:100,rnorm(100),runif(100),rnorm(100,0,2)))
-#' 
-#' 
+#'
+#'
 cub<-function(A,n=1000){
 
   B<-quadr(A,n) #creating an array of all pairwise interactions

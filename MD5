@@ -1,7 +1,7 @@
-104c0e3b60d8bd9bbd7105fa58eba741 *DESCRIPTION
+bb9d02bb978c6dfea5ed5a446d054cba *DESCRIPTION
 1e53490a1425bdc874b159648d7fe28d *NAMESPACE
-a30158eddf9b18a14110ea57a6198c69 *R/carrot_functions.R
-59dda0860560a4669dd892c85c47c00e *build/partial.rdb
+05a9f6d285f2d5c6d2fe63bf2c7eb692 *R/carrot_functions.R
+e4a4e50de9dfbe223fe8d3b110cd90aa *build/partial.rdb
 029af41bc69b92f4873fdd1c9c2fcde2 *inst/REFERENCES.bib
 683433f03f7df74eb45920b020f000b6 *man/AUC.Rd
 fdb4936d4f24ca7a2180648e87d06bf2 *man/av_out.Rd
