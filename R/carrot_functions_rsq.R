@@ -76,7 +76,7 @@ make_numeric<-function(vari,outcome,ra,mode=NULL){
 
     if (mode=='linear'){
 
-      vari1<-model.matrix(~vari)
+      vari1<-model.matrix(~vari-1)
 
       vari1[ra,2:(dim(vari1)[2])];
 
@@ -350,9 +350,11 @@ sum_weights_sub<-function(a,m,we,st=NULL){
 
   if ((m>1)|(is.null(st)==FALSE)){ #if the size of the subset is greater than 1 or if it consists only of stationary part
 
-    for (h in 1:ncol(a))
+    for (h in 1:ncol(a)){
+      print(h)
 
       s[h]=sum(we[a[((h-1)*m+1):(h*m)]]); #sum up the corresponding weights
+    }
 
   } else s=we; #otherwise the target value is exactly the array of weights
 
@@ -446,6 +448,7 @@ compute_max_length<-function(vari_col,k,c,we,minx=1,maxx=NULL,st=NULL){ #
   #going through regressions with the number of variables we are willing to consider
 
   for (m in max(max(minx,1),lest):min(min(vari_col,k),maxx)){
+    print(m)
 
     a<-combn(c,m-lest); #all subsets of variables of the size m
 
@@ -474,7 +477,10 @@ compute_max_length<-function(vari_col,k,c,we,minx=1,maxx=NULL,st=NULL){ #
 #'@param testset values of predictors on the test set
 #'@param outc values of outcomes on the training set
 #'@param mode \code{'binary'} (logistic regression) or \code{'multin'} (multinomial regression)
-#'@usage get_probabilities(trset,testset,outc,mode)
+#'@param Rsq whether R-squared statistics constrained is introduced
+#'@param p weight of the model
+#'@param n_tr size of the training set
+#'@usage get_probabilities(trset,testset,outc,mode,Rsq,p,n_tr)
 #'@return Probabilities of the outcomes. In \code{'binary'} mode returns an array of the size of the number of observations in a testset. In \code{'multin'} returns an M x N matrix where M is the size of the number of observations in a testset
 #'and N is the number of unique outcomes minus 1.
 #'@details In binary mode this function computes the probabilities of the event '0'. In multinomial mode computes the probabilities of the events '0','1',...,'N-1'.
@@ -490,33 +496,65 @@ compute_max_length<-function(vari_col,k,c,we,minx=1,maxx=NULL,st=NULL){ #
 #'get_probabilities(trset,testset,rbinom(70,1,0.6),'binary')
 
 
-get_probabilities<-function(trset,testset,outc,mode){
+get_probabilities<-function(trset,testset,outc,mode,Rsq=F,p=NULL,n_tr){
 
   #dimensions of the test set
 
   d<-dim(data.matrix(testset));
 
+  #for binary mode compute the coefficients of the regression
+
+  regr<-multinom(-outc~.,data=data.frame(trset),trace=FALSE);
+
+  regr_c<-data.matrix(coef(regr));
+
+
 
   if (mode=='binary'){
 
-    #for binary mode compute the coefficients of the regression
+    if (Rsq==F){
 
-    regr<-data.matrix(coef(multinom(-outc~.,data=data.frame(trset),trace=FALSE)));
 
     #applying coefficients to the test set and immediately transforming the result in order to get probabilities later
 
-    ps=exp(matrix(rep(1,d[1]))%*%regr[1,]+data.matrix(testset)%*%regr[2:length(regr),]);
+    ps=exp(matrix(rep(1,d[1]))%*%regr_c[1,]+data.matrix(testset)%*%regr_c[2:length(regr_c),]);
+    } else{
 
+
+
+      L0<-sum(log(((1/(1+exp(-regr_c[1,])))^(sum(outc)))*((1-1/(1+exp(-regr_c[1,])))^(n_tr-sum(outc)))))
+      Lm<-sum(log(1/(1+exp(-matrix(rep(1,length(outc)))%*%regr_c[1,]-data.matrix(trset)%*%regr_c[2:length(regr_c),]))))
+
+      LR=-2*(L0-Lm)
+
+      s=1-p/LR
+
+      if ((s>=0.9)&(is.na(s)==F)){
+
+        Rsq_v=1-exp(-LR/n_tr)
+        Rsq_m=1-exp(2*L0/n_tr)
+
+        if ((Rsq_v*(1-s)/Rsq_m<0.05)&(is.na(Rsq_v*(1-s)/Rsq_m)==F)){
+
+      #applying coefficients to the test set and immediately transforming the result in order to get probabilities later
+
+      ps=exp(matrix(rep(1,d[1]))%*%regr_c[1,]+data.matrix(testset)%*%regr_c[2:length(regr_c),]);
+
+        } else ps=rep(NA,d[1])
+      } else ps=rep(NA,d[1])
+
+
+}
 
   } else {
 
     #for multinomial mode compute the coefficients of the regression
 
-    regr<-apply(data.matrix(coef(multinom(-outc~.,data=data.frame(trset),trace=FALSE))),2,rev);
+    regr_c<-apply(data.matrix(coef(multinom(-outc~.,data=data.frame(trset),trace=FALSE))),2,rev);
 
     #applying coefficients to the test set and immediately transforming the result in order to get probabilities later
 
-    ps=rowSums(exp(matrix(rep(1,d[1]))%*%regr[,1]+data.matrix(testset)%*%t(regr[,2:dim(regr)[2]])));
+    ps=rowSums(exp(matrix(rep(1,d[1]))%*%regr_c[,1]+data.matrix(testset)%*%t(regr_c[,2:dim(regr_c)[2]])));
 
   }
 
@@ -526,29 +564,31 @@ get_probabilities<-function(trset,testset,outc,mode){
 
   ps[ps==Inf]=max(ps[ps<Inf])*coe;
 
-  while(length(ps[ps==Inf])>0){
+  while(length((ps[ps==Inf])>0)&(sum(is.na(ps)))!=d[1]){
     coe=coe/2;
     ps[ps==Inf]=max(ps[ps<Inf])*coe;
   }
 
   #computing the first term in the product in order to get probabilities
 
-  p1=t(1/(1+ps));
+
 
   #computing the second term in the product in order to get probabilities for binary and multinomial probabilities
 
   if (mode=='binary') {
 
-    p0=exp(matrix(rep(1,d[1]))%*%regr[1,]+data.matrix(testset)%*%regr[2:length(regr),]);
+ #   p0=exp(matrix(rep(1,d[1]))%*%regr_c[1,]+data.matrix(testset)%*%regr_c[2:length(regr_c),]);
+    p=1/(1+1/ps);
 
-  } else p0=exp(matrix(rep(1,d[1]))%*%regr[,1]+data.matrix(testset)%*%t(regr[,2:dim(regr)[2]]));
+  } else p0=exp(matrix(rep(1,d[1]))%*%regr_c[,1]+data.matrix(testset)%*%t(regr_c[,2:dim(regr_c)[2]]));
 
 
 
-  if (mode=='binary') { #computing the probabilities for binary mode
-
-    p=t(p1)*p0;
-  } else { #computing the probabilities for multinomial mode and combining them into a matrix
+   if (mode!='binary') { #computing the probabilities for binary mode
+  #
+  #   p=t(p1)*p0;
+  # } else { #computing the probabilities for multinomial mode and combining them into a matrix
+     p1=t(1/(1+ps));
 
     p=t(p1)*p0[,1]
 
@@ -557,11 +597,11 @@ get_probabilities<-function(trset,testset,outc,mode){
   }
 
 
-  if (sum(is.na(p))>0) { #output an error message in case there are undefined values of p
-
-    stop('undefined prediction probabilities')
-
-  }
+  # if (sum(is.na(p))>0) { #output an error message in case there are undefined values of p
+  #
+  #   stop('undefined prediction probabilities')
+  #
+  # }
 
   p #output the probabilities
 
@@ -576,7 +616,12 @@ get_probabilities<-function(trset,testset,outc,mode){
 #'@param testset values of predictors on the test set
 #'@param outc values of predictors on the training set
 #'@param k length of the test set
-#'@usage get_predictions_lin(trset,testset,outc,k)
+#'@param Rsq whether the R-squared statistics constraint is introduced
+#'@param Rsq_v value of R-squared statistics on the training spli of the data
+#'@param marg margin of error for R-squared statistics constraint
+#'@param p weight of the model
+#'@param n_tr size of the training set
+#'@usage get_predictions_lin(trset,testset,outc,k,n_tr,p,Rsq,Rsq_v,marg)
 #'@return An array of continous variables of the length equal to the size of a \code{testset}
 #'@seealso Function uses function \code{\link[stats]{lsfit}} and \code{\link[stats]{coef}}
 #'@export get_predictions_lin
@@ -587,11 +632,15 @@ get_probabilities<-function(trset,testset,outc,mode){
 #'
 #'get_predictions_lin(trset,testset,runif(90,0,1),10)
 
-get_predictions_lin<-function(trset,testset,outc,k){
+get_predictions_lin<-function(trset,testset,outc,k,n_tr,p,Rsq=F,Rsq_v=NULL,marg=0){
 
   #write the coefficients of the linear regression fitted to the corresponding training set into an array
 
-  regr<-data.matrix(coef(lsfit(as.matrix(trset),outc)));
+  regr<-lsfit(as.matrix(trset),outc)
+
+  regr_c<-data.matrix(coef(regr));
+
+
 
   #initialise an array of predictions
 
@@ -600,17 +649,47 @@ get_predictions_lin<-function(trset,testset,outc,k){
 
   if (sum(outc%%1)==0){# in case the outcomes are integers round the predictions
 
-    pred<-round(data.matrix(testset)%*%matrix(regr[2:length(regr)])+regr[1]);
+    if (Rsq==T){
+
+      varre=var(regr$residuals)
+
+
+      Rr=1-varre/var(outc)
+
+      marg0=0
+
+      if (marg>0) marg0=sqrt(varre/n_tr)*qt(0.975,n_tr-p-1)/abs(regr_c[1,])
+
+      if ((Rr>Rsq_v)&(marg0<=marg)) pred<-round(data.matrix(testset)%*%matrix(regr_c[2:length(regr_c)])+regr_c[1]);
+
+    } else pred<-round(data.matrix(testset)%*%matrix(regr_c[2:length(regr_c)])+regr_c[1]);
 
   } else{ #otherwise do not round them
 
-    pred<-data.matrix(testset)%*%matrix(regr[2:length(regr)])+regr[1];
+    if (Rsq==T){
+
+      varre=var(regr$residuals)
+
+      Rr=1-varre/var(outc)
+
+      marg0=0.0
+
+      if (marg>0) {
+
+        marg0=sqrt(varre/n_tr)*qt(0.975,n_tr-p-1)/regr_c[1,]
+
+      }
+
+      if ((Rr>Rsq_v)&(marg0<=marg)) pred<-round(data.matrix(testset)%*%matrix(regr_c[2:length(regr_c)])+regr_c[1]);
+
+
+    } else pred<-data.matrix(testset)%*%matrix(regr_c[2:length(regr_c)])+regr_c[1];
 
 
 
   }
 
-  #in case all outcomes are positive assign value zero to all negatuve predictions
+  #in case all outcomes are positive assign value zero to all negative predictions
 
   if (length(outc[outc<0]==0)) pred[pred<0]=0;
 
@@ -751,7 +830,7 @@ AUC <- function(probs, class) {
 #'@param l number of observations
 #'@param we weights of the predictors
 #'@param vari_col overall number of predictors
-#'@param preds array to write predictions into, intially empty
+#'@param preds array to write predictions for the test split into, intially empty
 #'@param cmode \code{'det'} or \code{''}; \code{'det'} always predicts the more likely outcome as determined by the odds ratio; \code{''} predicts certain outcome with probability corresponding to its odds ratio (more conservative). Option available for multinomial/logistic regression
 #'@param mode \code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)
 #'@param predm \code{'exact'} or \code{''}; for logistic and multinomial regression; \code{'exact'} computes how many times the exact outcome category was predicted, \code{''} computes how many times either the exact outcome category or its nearest neighbour was predicted
@@ -764,6 +843,10 @@ AUC <- function(probs, class) {
 #'@param st a subset of predictors to be always included into a predictive model,defaults to empty set
 #'@param rule an Events per Variable (EPV) rule, defaults to 10
 #'@param corr maximum correlation between a pair of predictors in a model
+#'@param Rsq whether R-squared statistics constrained is introduced
+#'@param marg margin of error for R-squared statistics constraint
+#'@param n_tr size of the training set
+#'@param preds_tr array to write predictions for the training split into, intially empty
 #@usage cross_val(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objfun,minx,maxx,nr,maxw,st,corr)
 #'@return
 #'\item{regr}{An M x N matrix of sums of the absolute errors for each element of the test set for each feasible regression. M is maximum feasible number of variables included in a regression, N is the maximum feasible number of regressions of the fixed size; the row index indicates the number of variables included in a regression. Therefore each row corresponds to results obtained from running regressions with the same number of variables and columns correspond to different subsets of predictors used.}
@@ -784,20 +867,38 @@ AUC <- function(probs, class) {
 #'
 #'#creating array for predictions
 #'
-#'preds<-array(NA,c(2,2))
+#'pr<-array(NA,c(2,2))
+#'
+#'pr_tr<-array(NA,c(2,2))
+#'
+#'#passing set of the inexes of the predictors
+#'
+#'c<-c(1:2)
+#'
+#'#passing the weights of the predictors
+#'
+#'we<-c(1,1)
+#'
+#'#setting the mode
+#'
+#'m<-'binary'
 #'
 #'#running the function
 #'
-#'cross_val(vari,out,1:2,10,10,100,c(1,1),2,preds,'binary','det','exact',0.5,'acc',nr=c(1,4))
-cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objfun,minx=1,maxx=NULL,nr=NULL,maxw=NULL,st=NULL,corr=1){
+#'cross_val(vari,out,c,10,10,100,we,2,pr,m,'det','exact',0.5,'acc',nr=c(1,4),n_tr=90,preds_tr=pr_tr)
+
+cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objfun,minx=1,maxx=NULL,nr=NULL,maxw=NULL,st=NULL,corr=1,Rsq=F,marg=0.0,n_tr,preds_tr){
 
   #for linear mode initialising the array of relative errors
 
-  if (mode=='linear') predsr<-preds
+  if (mode=='linear') {
+    predsr<-preds
+   predsr_tr<-preds_tr
+  }
 
   if (is.null(nr)==TRUE){ #creating the partition into training and test set given that no subset is specified to be necessarily present both in the training and test set
 
-    ra=sample(1:l,floor((1-(1/part))*l));
+    ra=sample(1:l,n_tr);
 
   } else { #creatinng the partition when parameter nr is specified
 
@@ -807,7 +908,7 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
     #partitioning the remaining datapoints
 
-    rar=sample(setdiff(1:l,nr),floor((1-(1/part))*l)-floor((1-(1/part))*lnr));
+    rar=sample(setdiff(1:l,nr),n_tr-floor((1-(1/part))*lnr));
 
     #combining the two
 
@@ -932,31 +1033,97 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
         if (mode=='linear'){ #linear mode
 
           #get the prediction for the training set
+        if (Rsq==F){
 
-          pred<-get_predictions_lin(trset1,testset1,outc,l-floor((1-1/part)*l))
+          pred<-get_predictions_lin(trset1,testset1,outc,l-n_tr,n_tr,s[ai[k]],Rsq,Rsq_v)
+
+          pred_tr<-get_predictions_lin(trset1,trset1,outc,n_tr,n_tr,s[ai[k]],Rsq,Rsq_v)
 
           #difference between the actual value and the predicted one on the test set
 
           diff<-outi[setdiff(1:l,ra)]-pred;
 
+          diff_tr<-outi[ra]-pred_tr
+
           #difference between predicted value and the actual one divided by the actual one, aka relative difference
 
           diffr<-(pred/outi[setdiff(1:l,ra)])-1;
+
+          diffr_tr<-(pred_tr/outi[ra])-1;
+
+          #diffr_tr[diff_tr==0]=0
+
+          #diffr[diff==0]=0
 
           #sum of all absolute values of differences defined above
 
           preds[j-minx+1,k]=sum(abs(diff));
 
+          preds_tr[j-minx+1,k]=sum(abs(diff_tr));
+
           #sum of all absolute values of relative differences defined above
 
           predsr[j-minx+1,k]=sum(abs(diffr));
 
+          predsr_tr[j-minx+1,k]=sum(abs(diffr_tr));
+
+         } else {
+
+           #
+           marg0=0
+
+           if (marg>0.0) marg0=sqrt(max(qchisq(0.975,n_tr-1-s[ai[k]])/(n_tr-1-s[ai[k]]),(n_tr-1-s[ai[k]])/qchisq(0.975,n_tr-1-s[ai[k]])))-1
+
+           if (marg0<=marg){
+
+
+             Rsq_v=max(1-exp((2-s[ai[k]])/(0.1*n_tr)),(s[ai[k]]-0.05*(n_tr-1-s[ai[k]]))/s[ai[k]])
+
+
+             pred<-get_predictions_lin(trset1,testset1,outc,l-n_tr,n_tr,s[ai[k]],Rsq,Rsq_v,marg)
+
+             pred_tr<-get_predictions_lin(trset1,trset1,outc,n_tr,n_tr,s[ai[k]],Rsq,Rsq_v,marg)
+
+
+             #difference between the actual value and the predicted one on the test set
+
+             diff<-outi[setdiff(1:l,ra)]-pred;
+
+             diff_tr<-outi[ra]-pred_tr;
+
+             #difference between predicted value and the actual one divided by the actual one, aka relative difference
+
+             diffr<-(pred/outi[setdiff(1:l,ra)])-1;
+
+             diffr_tr<-(pred_tr/outi[ra])-1;
+
+             #sum of all absolute values of differences defined above
+
+             preds[j-minx+1,k]=sum(abs(diff));
+
+             preds_tr[j-minx+1,k]=sum(abs(diff_tr));
+
+             #sum of all absolute values of relative differences defined above
+
+             predsr[j-minx+1,k]=sum(abs(diffr));
+
+             predsr_tr[j-minx+1,k]=sum(abs(diffr_tr));
+
+
+
+           }
+
+        }
 
         } else{
 
+          if (Rsq==F){
+
           #computing the probabilities for each outcome on the test set by fitting multinomial/logistic regression to the training set
 
-          p<-get_probabilities(trset1,testset1,outc,mode);
+          p<-get_probabilities(trset1,testset1,outc,mode,Rsq,n_tr=n_tr);
+
+          p_tr<-get_probabilities(trset1,trset1,outc,mode,Rsq,n_tr=n_tr);
 
 
           if (objfun=='acc'){ #case of accuracy maximisation
@@ -965,14 +1132,20 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
             pred<-get_predictions(p,l-floor((1-1/part)*l),cutoff,cmode,mode)
 
+            pred_tr<-get_predictions(p_tr,floor((1-1/part)*l),cutoff,cmode,mode)
+
             #difference between the actual values and the predicted ones on the test set
 
             diff<-outi[setdiff(1:l,ra)]-array(pred);
+
+            diff_tr<-outi[ra]-array(pred_tr);
 
 
             if (predm=='exact')  { #in case of the exact prediction, aka predicting the exact class
 
               diff[abs(diff)>0]=1;
+
+              diff_tr[abs(diff_tr)>0]=1;
             } else{
 
               #in case of "up to a class" prediction, aka consider correct if the correct class is the one neighboring to the predicted one
@@ -987,12 +1160,87 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
             preds[j-minx+1,k]=l-floor((1-1/part)*l)-sum(abs(diff));
 
+            preds_tr[j-minx+1,k]=floor((1-1/part)*l)-sum(abs(diff_tr));
+
 
           } else{
 
             #computing the AUROC of the prediction
 
             preds[j-minx+1,k]<-AUC(1-p,outi[setdiff(1:l,ra)])
+
+            preds_tr[j-minx+1,k]<-AUC(1-p_tr,outi[ra])
+          }
+          } else {
+
+            marg0=0.0
+
+            if (marg>0) marg0=1.96*sqrt(sum(outc)*(n_tr-sum(outc))/n_tr)
+
+            if (marg0<=marg){
+
+              #Rsq_v=1-exp(-s[ai[k]]/(0.1*n_tr))
+
+              #computing the probabilities for each outcome on the test set by fitting multinomial/logistic regression to the training set
+
+              p<-get_probabilities(trset1,testset1,outc,mode,Rsq,s[ai[k]],n_tr);
+
+              p_tr<-get_probabilities(trset1,trset1,outc,mode,Rsq,s[ai[k]],n_tr);
+
+
+
+              if (objfun=='acc'){ #case of accuracy maximisation
+
+                #transforming probabilities into predictions
+
+                pred<-get_predictions(p,l-floor((1-1/part)*l),cutoff,cmode,mode)
+
+                pred_tr<-get_predictions(p_tr,floor((1-1/part)*l),cutoff,cmode,mode)
+
+                #difference between the actual values and the predicted ones on the test set
+
+                diff<-outi[setdiff(1:l,ra)]-array(pred);
+
+                diff_tr<-outi[ra]-array(pred_tr);
+
+
+                if (predm=='exact')  { #in case of the exact prediction, aka predicting the exact class
+
+                  diff[abs(diff)>0]=1;
+
+                  diff_tr[abs(diff_tr)>0]=1;
+                } else{
+
+                  #in case of "up to a class" prediction, aka consider correct if the correct class is the one neighboring to the predicted one
+
+                  diff[abs(diff)<2]=0;
+                  diff[abs(diff)>1]=1;
+                }
+
+                #computing the number of times prediction was correct (non-averaged out accuracy)
+
+                #rows correspond to the number of variables in a regression, column is determined by k
+
+                preds[j-minx+1,k]=l-floor((1-1/part)*l)-sum(abs(diff));
+
+                preds_tr[j-minx+1,k]=floor((1-1/part)*l)-sum(abs(diff_tr));
+
+
+              } else{
+
+                #computing the AUROC of the prediction
+
+                preds[j-minx+1,k]<-AUC(1-p,outi[setdiff(1:l,ra)])
+
+                preds_tr[j-minx+1,k]<-AUC(1-p_tr,outi[ra])
+              }
+
+
+
+            }
+
+
+
           }
         }
       }
@@ -1011,7 +1259,7 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
 #output is a list of (non-averaged out) accuracies of all feasible regression models, the corredponding maximal nimber of variables, the corredsponding empirical prediction
 
-    list("regr" = preds, "nvar"=nvar, "emp" = cpred)
+    list("regr" = preds, "nvar"=nvar, "emp" = cpred, "regr_tr"=preds_tr)
 
 
   } else{
@@ -1020,7 +1268,7 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
       #list of AUROCs for all feasible model and the corrresponding maximal number of variables
 
-      list("regr" = preds, "nvar"=nvar)
+      list("regr" = preds, "nvar"=nvar,"regr_tr"=preds_tr)
 
     } else{
 
@@ -1036,7 +1284,7 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
 
         #output is a list of (non-averaged out) accuracies of all feasible regression models, the corredponding maximal nimber of variables, the corredsponding empirical prediction
 
-        list("regr" = preds, "nvar"=nvar, "emp" = cpred)
+        list("regr" = preds, "nvar"=nvar, "emp" = cpred,"regr_tr"=preds_tr)
 
       } else{ #linear mode
 
@@ -1050,7 +1298,7 @@ cross_val<-function(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,c
       #the corredponding maximal nimber of variables, non-averaged out relative errors of all feasible regression models
       #absolute error of the empirical prediction, relative error of the empirical prediction
 
-      list("regr" = preds, "nvar"=nvar, "regrr"=predsr, "emp"=cpred,"empr"=cpredr)
+      list("regr" = preds, "nvar"=nvar, "regrr"=predsr, "emp"=cpred,"empr"=cpredr,"regrr_tr"=predsr_tr,"regr_tr"=preds_tr)
 
     }
   }
@@ -1146,6 +1394,8 @@ get_indices<-function(predsp,nvar,c,we,st=NULL,minx=1){
 
   ll=list(0)
 
+  if (sum(is.na(predsp))<length(predsp)){
+
   #finding the index of the arry of the averaged out predictive powers which corresponds to the highest predictive power
 
   nums<-which(predsp==max(predsp[predsp!=0],na.rm=TRUE))
@@ -1217,6 +1467,7 @@ get_indices<-function(predsp,nvar,c,we,st=NULL,minx=1){
 
 
   }
+  } else ll=NA
 
   #output the lest of the models exhibiting the best predictive power
 
@@ -1244,6 +1495,8 @@ get_indices<-function(predsp,nvar,c,we,st=NULL,minx=1){
 #'@param st a subset of predictors to be always included into a predictive model,defaults to empty set
 #'@param rule an Events per Variable (EPV) rule, defaults to 10'
 #'@param corr maximum correlation between a pair of predictors in a model
+#'@param Rsq whether the R-squared statistics constraint is introduced
+#'@param marg margin of error for R-squared statistics constraint
 #'@return Prints the best predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic and linear regression). Returns indices of the predictors included into regressions with the highest predictive power written in a list. For \code{mode='linear'} outputs a list of two lists. First list corresponds to the smallest absolute error, second corresponds to the smallest relative error
 #'@export regr_ind
 #'@import doParallel
@@ -1278,7 +1531,7 @@ get_indices<-function(predsp,nvar,c,we,st=NULL,minx=1){
 
 
 
-regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exact',objfun='acc',parallel=FALSE,cores,minx=1,maxx=NULL,nr=NULL,maxw=NULL,st=NULL,rule=10,corr=1){
+regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exact',objfun='acc',parallel=FALSE,cores,minx=1,maxx=NULL,nr=NULL,maxw=NULL,st=NULL,rule=10,corr=1,Rsq=F,marg=0){
 
   #in case of an error close all the connections
 
@@ -1290,6 +1543,12 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
   if ((objfun=='roc')&(mode!='binary')) {
 
     stop('function "roc" is available for binary mode only')
+
+  }
+
+  if ((length(unique(outi))>2)&(mode=='binary')){
+
+    stop('the outcome you provided appears to be non-binary, please re-run in multin mode')
 
   }
 
@@ -1313,6 +1572,9 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   l=nrow(vari);
 
+  n_tr=floor((1-(1/part))*l)
+
+
   #the array of all indices of predictive variables
 
   c<-c(1:vari_col);
@@ -1329,16 +1591,17 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   #compute maximal length of a regression which can be fitted to a training set
 
-  le<-compute_max_length(vari_col,floor((1.0/(rule*min(we)))*numr),c,we,minx,maxx+1,st)
+  le<-compute_max_length(vari_col,floor((1.0/rule)*numr),c,we,minx,maxx+1,st)
 
   #initialising the array of predictive powers of all feasible regression
 
   preds<-array(NA,c(min(vari_col,min(floor((1/(rule*min(we)))*numr),maxx+1))-minx+1,le));
 
+  preds_tr<-array(NA,c(min(vari_col,min(floor((1/(rule*min(we)))*numr),maxx+1))-minx+1,le));
+
   #defining a %fun% function
 
   `%fun%` <- `%do%`
-
 
 
   if (parallel==TRUE){ #in case the parallel mode is on
@@ -1347,7 +1610,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
     #creating a cluster of the corresponding foem
 
-    cl <- makeCluster(cores)
+    cl <- makeCluster(cores,setup_strategy="sequential")
 
     registerDoParallel(cl)
 
@@ -1375,22 +1638,19 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   }
 
-  if(parallel==T) on.exit(stopCluster(cl))
-
   #running the given number of cross-validations
 
   result <- foreach(i=1:crv, .combine='comb', .multicombine=TRUE,.packages="CARRoT") %fun% {
 
 
 
-    cross_val(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objfun,minx,maxx,nr,maxw,st,corr);
+    cross_val(vari,outi,c,rule,part,l,we,vari_col,preds,mode,cmode,predm,cutoff,objfun,minx,maxx,nr,maxw,st,corr,Rsq,marg,n_tr,preds_tr);
 
 
 
   }
 
-#parallel::stopCluster(cl)
-
+  if(parallel==T) on.exit(stopCluster(cl))
   #writing predictive powers of the regressions in an array
 
   preds<-result[[1]];
@@ -1398,6 +1658,8 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
   #writing the maximal number of variables in an array
 
   nvar<-result[[2]];
+
+  preds_tr<-result[[length(result)]]
 
 
 
@@ -1415,6 +1677,8 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
       #write the array of relative errors
 
       predsr<-result[[3]];
+
+      predsr_tr<-result[[length(result)-1]]
 
       #write the array of absolute errors of empirical predictions
 
@@ -1439,23 +1703,29 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
   #stop the cluster
 
+#  if (parallel==TRUE) stopCluster(cl)
 
-
- # closeAllConnections()
+#  closeAllConnections()
 
 
   #average out the predictive powers over all cross-validations
 
   if (objfun=='roc'){
     predsp<-av_out(preds,crv,1)
+
+    predsp_tr<-av_out(preds_tr,crv,1)
   } else{
 
-    predsp<-av_out(preds,crv,l-floor((1-(1/part))*l))
+    predsp<-av_out(preds,crv,l-n_tr)
+
+    predsp_tr<-av_out(preds_tr,crv,n_tr)
   }
 
   if (mode=='linear')  {
 
-    predspr<-av_out(predsr,crv,l-floor((1-(1/part))*l))
+    predspr<-av_out(predsr,crv,l-n_tr)
+
+    predspr_tr<-av_out(predsr_tr,crv,n_tr)
 
 
   }
@@ -1466,36 +1736,61 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
   if (((mode=='binary')&(objfun=='acc'))|(mode=='multin')) {
 
     #print the average accuracy attained by the best predictive model and the empirical accuracy
+    t1<-max(predsp[predsp>0],na.rm=TRUE)
+    t1_ind<-which(predsp==t1)[1]
 
-    print(c(max(predsp[predsp>0],na.rm=TRUE),1-sum(cpred)/crv));
-    a1<-max(predsp[predsp>0],na.rm=TRUE)
+    if (is.infinite(t1)) t1=NA
+    a1<-c(t1,min(predsp_tr[t1_ind]),1-sum(cpred)/crv)
+
+    print(a1);
 
   } else{
 
     if (objfun=='roc') {
 
       #print the average AUROC of the best predictive model
+    t1<-max(predsp[predsp>0],na.rm=TRUE)
 
-      print(max(predsp[predsp>0],na.rm=TRUE))
-      a1<-max(predsp[predsp>0],na.rm=TRUE)
+    t1_ind<-which(predsp==t1)
+    if (is.infinite(t1)) t1=NA
+
+      print(c(t1,predsp_tr[t1_ind]))
+      a1<-c(t1,predsp_tr[t1_ind])
 
     } else{
 
 
-      if (sum(is.finite(predspr[predspr>0]))>0){
+      if (is.na(sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf])))==F){
 
         #in case all average relative errors are finite
 
-      print(c(min(predsp[predsp>0],na.rm=TRUE),min(predspr[predspr>0],na.rm=TRUE),sum(cpred)/crv,sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf]))))
-      a1<-c(min(predsp[predsp>0],na.rm=TRUE),min(predspr[predspr>0],na.rm=TRUE),sum(cpred)/crv,sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf])))
+        t1<-min(predsp[predsp>0],na.rm=TRUE)
+        t2<-min(predspr[predspr>0],na.rm=TRUE)
+
+        t1_ind<-which(predsp==t1)
+        t2_ind<-which(predspr==t2)
+
+        if (is.infinite(t1)) t1=NA
+        if (is.infinite(t2)) t2=NA
+
+
+      print(c(t1,t2,min(predsp_tr[t1_ind]),min(predspr_tr[t2_ind]),sum(cpred)/crv,sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf]))))
+
+      a1<-c(t1,t2,min(predsp_tr[t1_ind]),min(predspr_tr[t2_ind]),sum(cpred)/crv,sum(cpredr[cpredr<Inf])/(crv-length(cpredr[cpredr==Inf])))
 
         } else {
 
           #printing NaN values for average relative error in case it is not finite
 
-        print(c(min(predsp[predsp>0],na.rm=TRUE),NaN,sum(cpred)/crv,NaN))
+          t1<-min(predsp[predsp>0],na.rm=TRUE)
 
-          a1<-c(min(predsp[predsp>0],na.rm=TRUE),NaN,sum(cpred)/crv,NaN)
+          t1_ind<-which(predsp==t1)
+
+          if (is.infinite(t1)) t1=NA
+
+        print(c(t1,NaN,min(predsp_tr[t1_ind]),sum(cpred)/crv,NaN))
+
+          a1<-c(t1,NaN,sum(cpred)/crv,NaN)
 
 
       }
@@ -1538,154 +1833,7 @@ regr_ind<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exa
 
 }
 
-#' Best regressions
-#'
-#' Function which prints the highest predictive power, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression), outputs the regression objects corresponding to the highest average predictive power and the indices of the variables included into regressions with the best predictive power.
-#' In the case of linear regression it outputs the best regressions with respect to both absolute and relative errors
-#'@param vari set of predictors
-#'@param outi array of outcomes
-#'@param crv number of cross-validations
-#'@param cutoff cut-off value for mode \code{'binary'}
-#'@param part for each cross-validation partitions the dataset into training and test set in a proportion \code{(part-1):part}
-#'@param cmode \code{'det'} or \code{''}; \code{'det'} always predicts the more likely outcome as determined by the odds ratio; \code{''} predicts certain outcome with probability corresponding to its odds ratio (more conservative). Option available for multinomial/logistic regression
-#'@param mode \code{'binary'} (logistic regression), \code{'multin'} (multinomial regression)
-#'@param predm \code{'exact'} or \code{''}; for logistic and multinomial regression; \code{'exact'} computes how many times the exact outcome category was predicted, \code{''} computes how many times either the exact outcome category or its nearest neighbour was predicted
-#'@param objfun \code{'roc'} for maximising the predictive power with respect to AUC, available only for \code{mode='binary'}; \code{'acc'} for maximising predictive power with respect to accuracy.
-#'@param parallel TRUE if using parallel toolbox, FALSE if not. Defaults to FALSE
-#'@param cores number of cores to use in case of parallel=TRUE
-#'@param minx minimum number of predictors to be included in a regression, defaults to 1
-#'@param maxx maximum number of predictors to be included in a regression, defaults to maximum feasible number according to one in ten rule
-#'@param maxw maximum weight of predictors to be included in a regression, defaults to maximum weight according to one in ten rule
-#'@param nr a subset of the data-set, such that \code{1/part} of it lies in the test set and \code{1-1/part} is in the training set, defaults to empty set. This is to ensure that elements of this subset are included both in the training and in the test set.
-#'@param st a subset of predictors to be always included into a predictive model,defaults to empty set
-#'@param rule an Events per Variable (EPV) rule, defaults to 10
-#'@param corr maximum correlation between a pair of predictors in a model
-#'@return Prints the highest predictive power provided by a regression, predictive accuracy of the empirical prediction (value of \code{emp} computed by \code{cross_val} for logistic regression).
-#'\item{ind}{Indices of the predictors included into regressions with the best predictive power written in a list. For \code{mode='linear'} a list of two lists. First list corresponds to the smallest absolute error, second corresponds to the smallest relative error. This output is identical to the one from \code{regr_ind}}
-#'\item{regr}{List of regression objects providing the best predictions. For \code{mode='multin'} and \code{mode='binary'}}
-#'\item{regr_a}{List of regression objects providing the best predictions with respect to absolute error.For \code{mode='linear'}}
-#'\item{regr_r}{List of regression objects providing the best predictions with respect to relative error.For \code{mode='linear'}}
-#'@seealso Uses \code{\link{regr_ind}},\code{\link[stats]{lm}}, \code{\link[nnet]{multinom}}
-#'@export regr_whole
-#'@import doParallel
-#'@import parallel
-#'@import foreach
-#'@examples
-#'#creating variables for linear regression mode
-#'
-#'variables_lin<-matrix(c(rnorm(56,0,1),rnorm(56,1,2)),ncol=2)
-#'
-#'#creating outcomes for linear regression mode
-#'
-#'outcomes_lin<-rnorm(56,2,1)
-#'
-#'#running the function
-#'
-#'regr_whole(variables_lin,outcomes_lin,20,mode='linear',parallel=TRUE,cores=2)
-#'
-#'#creating variables for binary mode
-#'
-#'vari<-matrix(c(1:100,seq(1,300,3)),ncol=2)
-#'
-#'#creating outcomes for binary mode
-#'
-#'out<-rbinom(100,1,0.3)
-#'
-#'#running the function
-#'
-#'regr_whole(vari,out,20,cutoff=0.5,part=10,mode='binary',parallel=TRUE,cores=2)
 
-
-
-regr_whole<-function(vari,outi,crv,cutoff=NULL,part=10,mode,cmode='det',predm='exact',objfun='acc',parallel=FALSE,cores=NULL,minx=1,maxx=NULL,nr=NULL,maxw=NULL,st=NULL,rule=10,corr=1){
-
-  #error message in case of incompatible moe and objfun parameters
-
-  if ((objfun=='roc')&(mode!='binary')) {
-
-    stop('function "roc" is available for binary mode only')
-
-  }
-
-  #writing lists of indices of the variables included into the best regressions into the array
-
-  ind<-regr_ind(vari,outi,crv,cutoff,part,mode,cmode,predm,objfun,parallel,cores,minx,maxx,nr,maxw,st,rule,corr)
-
-  if (mode=='linear'){ #linear mode
-
-    regr_a=list(0)
-
-    if (identical(ind[[2]][[1]],ind[[3]][[1]])){ #if the same models minimise both relative and absolute error
-
-
-
-      for (i in 1:length(ind[[2]])){ #fit linear regression with the variables corresponding to the best models to the whole dataset
-
-
-        regr_a[[i]]<-lsfit(outi,vari[,ind[[2]][[i]]]);
-
-
-      }
-
-
-      #output the list of corresponding regression objects and the indices of variables corresponding to them
-
-      list("regr_a"=regr_a,"regr_r"=regr_a,"ind"=ind)
-
-
-    } else { #if absolute and relative errors are minimised by different models
-
-
-
-      regr_a<-array(list(),length(ind[[2]]))
-
-
-      for (i in 1:length(ind[[2]])){ #fitting to the whole dataset regression which minimises absolute error
-
-        regr_a[[i]]<-lsfit(outi,vari[,ind[[2]][[i]]]);
-
-      }
-
-
-      regr_r<-array(list(),length(ind[[3]]))
-
-
-      for (i in 1:length(ind[[3]])){ #fitting to the whole dataset regression which minimises relative error
-
-
-        regr_r[[i]]<-lsfit(outi,vari[,unlist(ind[[3]][[i]])]);
-
-      }
-
-      #output the list of corresponding regression objects and the indices of variables corresponding to them
-
-      list("regr_a"=regr_a,"regr_r"=regr_r,"ind"=ind)
-
-
-
-    }
-
-  } else { #multinomial or binary mode
-
-
-    regr<-array(list(),length(ind[[2]]))
-
-    for (i in 1:length(ind[[2]])){ #fitting to the whole dataset regression which mmaximises the predictive power
-
-      regr[[i]]<-multinom(-outi~.,data=data.frame(vari[,ind[[2]][[i]]]),trace=FALSE)
-
-    }
-
-    #output the list of corresponding regression objects and the indices of variables corresponding to them
-
-    list("regr"=regr,"ind"=ind)
-
-
-
-  }
-
-
-}
 
 
 #' Pairwise interactions and squares
@@ -1711,11 +1859,20 @@ if (n==1000){ #if the n parameter is set to default
 
 }
 
+  ind<-c()
+
 for (i in 1:n){
 
-  B=cbind(B,A[,i:dim(A)[2]]*A[,i]) #multiplying variables in order to obtain pairwise interactions
-
+  ind<-c(ind,i:n)
 }
+
+B<-cbind(B,A[,rep(1:n,c(n:1))]*A[,ind])
+
+#for (i in 1:n){
+
+#  B=cbind(B,A[,i:dim(A)[2]]*A[,i]) #multiplying variables in order to obtain pairwise interactions
+
+#}
 
 B
 }
@@ -1740,9 +1897,29 @@ cub<-function(A,n=1000){
 
   m<-dim(B)[2] #the number of variables and their pairwise interactions
 
+  C<-B[,(n+1):m]
+
+  k<-m-n
+
+  ind<-c()
+  ind0<-c()
+
   for (i in 1:n){
-    B=cbind(B,B[,(n+0.5*(n+n-i+2)*(i-1)+1):m]*A[,i]) #multiplying variables from B (pairwise interactions) and A in order to obtain three-way interactions
+
+#    ind<-c(ind,i:n)
+    ind0<-c(ind0,c((n-i+1):1))
   }
+
+  for (i in 1:n){
+
+    ind<-c(ind,n+1-ind0[(ifelse(i==1,0,sum((n-i+2):n))+1):length(ind0)])
+  }
+
+  B<-cbind(B,C[,rep(1:k,ind0)]*A[,ind])
+
+#  for (i in 1:n){
+#    B=cbind(B,B[,(n+0.5*(n+n-i+2)*(i-1)+1):m]*A[,i]) #multiplying variables from B (pairwise interactions) and A in order to obtain three-way interactions
+#  }
 
   B
 
