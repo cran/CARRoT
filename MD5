@@ -1,7 +1,7 @@
-296b07e0578ef339bc0af8707a440744 *DESCRIPTION
+c88f03361b1aa8a9efd07c96fcb3cbbd *DESCRIPTION
 fed4857ef58489b546946e9de33595e5 *NAMESPACE
-f8deca8c3141ef483a21561ae7c1c275 *R/carrot_functions_rsq.R
-b5f5960689dd700f35019baf9217c372 *build/partial.rdb
+4a187635963d7ee1347a5dd0c7176df9 *R/carrot_functions_rsq.R
+70ed565c287811204ec454076fe1d89c *build/partial.rdb
 029af41bc69b92f4873fdd1c9c2fcde2 *inst/REFERENCES.bib
 7c0b3037d389633b043b3907f308d100 *man/AUC.Rd
 a92b247b9d138e8d64ec38e63cc534dc *man/av_out.Rd

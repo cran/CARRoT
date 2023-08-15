@@ -351,7 +351,7 @@ sum_weights_sub<-function(a,m,we,st=NULL){
   if ((m>1)|(is.null(st)==FALSE)){ #if the size of the subset is greater than 1 or if it consists only of stationary part
 
     for (h in 1:ncol(a)){
-      print(h)
+      #print(h)
 
       s[h]=sum(we[a[((h-1)*m+1):(h*m)]]); #sum up the corresponding weights
     }
@@ -448,7 +448,7 @@ compute_max_length<-function(vari_col,k,c,we,minx=1,maxx=NULL,st=NULL){ #
   #going through regressions with the number of variables we are willing to consider
 
   for (m in max(max(minx,1),lest):min(min(vari_col,k),maxx)){
-    print(m)
+    #print(m)
 
     a<-combn(c,m-lest); #all subsets of variables of the size m
 
