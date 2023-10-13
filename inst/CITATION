@@ -1,0 +1,10 @@
+## R package reference generated from DESCRIPTION metadata
+citation(auto = meta)
+
+## NLME book
+bibentry(bibtype = "Article",
+         title = "CARRoT: R-package for predictive modelling by means of regression, adjusted for multiple regularisation methods",
+         author = c(person(c("Alina"), "Bazarova"),
+                    person(c("Marko"), "Raseta")),
+         year = "2023", journal = "PLoS ONE", volume="18(10):e0292597",
+         doi = "10.1371/journal.pone.0292597")
